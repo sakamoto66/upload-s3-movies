@@ -4,6 +4,7 @@ require('date-utils');
 
 (async () => {
   const target_dir = process.argv[2]
+  const s3path = process.argv[3]
   const lockfile = `${target_dir}/make.now`
 
   if( fs.existsSync(lockfile)) {
@@ -14,7 +15,7 @@ require('date-utils');
   for(let dir of dirList) {
     try {
       console.log(dir)
-      const params = uploads3.getParameters(dir)
+      const params = uploads3.getParameters(dir, s3path)
       for(pm of params) {
         await uploads3.upload(dir, pm)
       }

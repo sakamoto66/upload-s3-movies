@@ -18,7 +18,7 @@ exports.getMovieDirs = function (targetDir) {
   return dirs.filter(dir => ! fs.existsSync( `${dir}/files.txt` ) && 0 < glob.sync( `${dir}/*.[Mm][Pp]4` ).length)
 }
 
-exports.getParameters = function (dir) {
+exports.getParameters = function (dir, s3path) {
   const movies = glob.sync(`*.[Mm][Pp]4`, {cwd:dir})
 
   const fileList = `${dir}/files.txt`
@@ -26,15 +26,15 @@ exports.getParameters = function (dir) {
   movies.forEach(file => stream.write(`file ${file}\n`))
   stream.close()
 
-  const ret = movies.map(file => createCommandParam(dir, file))
-  ret.push(createCommandParam(dir, 'files.txt'))
+  const ret = movies.map(file => createCommandParam(dir, file, s3path))
+  ret.push(createCommandParam(dir, 'files.txt', s3path))
 
   return ret
 }
 
-function createCommandParam(dir, file) {
+function createCommandParam(dir, file, s3path) {
   const localPath = `${dir}/${file}`
-  const s3Path = `s3://movies123/${path.basename(dir)}/${file}`
+  const s3Path = `s3://${s3path}/${path.basename(dir)}/${file}`
   const param = []
   param.push('s3')
   param.push('cp')
