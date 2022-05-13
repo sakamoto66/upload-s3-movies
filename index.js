@@ -5,9 +5,15 @@ require('date-utils');
 (async () => {
   const target_dir = process.argv[2]
   const s3path = process.argv[3]
-  const lockfile = `${target_dir}/make.now`
+  const uploadFlg = `${target_dir}/upload`
+  const lockfile = `${target_dir}/upload.lock`
 
-  if( fs.existsSync(lockfile)) {
+  if( !fs.existsSync(uploadFlg) ) {
+    return;
+  }
+  fs.unlinkSync(uploadFlg)
+
+  if( fs.existsSync(lockfile) ) {
     return;
   }
   fs.writeFileSync(lockfile, new Date().toFormat("YYYY/MM/DD HH24:MI:SS"))
