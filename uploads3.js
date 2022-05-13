@@ -15,26 +15,39 @@ function createConcatFileList(dir) {
 
 exports.getMovieDirs = function (targetDir) {
   const dirs = glob.sync( `*/`, {cwd:targetDir, absolute:true} )
-  return dirs.filter(dir => ! fs.existsSync( `${dir}/files.txt` ) && 0 < glob.sync( `${dir}/*.[Mm][Pp]4` ).length)
+  return dirs.filter(dir => {
+    const ptn1 = !fs.existsSync( `${dir}/files.txt` ) && 0 < glob.sync( `${dir}/*.[Mm][Pp]4` ).length
+    const ptn2 = fs.existsSync( `${dir}/refiles.txt` )
+    return ptn1 || ptn2
+  })
 }
 
-exports.getParameters = function (dir, s3path) {
-  const movies = glob.sync(`*.[Mm][Pp]4`, {cwd:dir})
-
+exports.getParameters = function (dir, s3backet) {
+  const ret = []
+  const refiles = `${dir}/refiles.txt`
   const fileList = `${dir}/files.txt`
-  const stream = fs.createWriteStream(fileList)
-  movies.forEach(file => stream.write(`file ${file}\n`))
-  stream.close()
+  if(fs.existsSync( refiles )) {
+    fs.renameSync(refiles, fileList)
+  } else {
+    const movies = glob.sync(`*.[Mm][Pp]4`, {cwd:dir})
+    const stream = fs.createWriteStream(fileList)
+    const files = movies.map(file => {
+      stream.write(`file ${file}\n`)
+      return createCommandParam(dir, file, s3backet)
+    })
+    stream.close()
 
-  const ret = movies.map(file => createCommandParam(dir, file, s3path))
-  ret.push(createCommandParam(dir, 'files.txt', s3path))
+    ret.push(...files)
+  }
+
+  ret.push(createCommandParam(dir, 'files.txt', s3backet))
 
   return ret
 }
 
-function createCommandParam(dir, file, s3path) {
+function createCommandParam(dir, file, s3backet) {
   const localPath = `${dir}/${file}`
-  const s3Path = `s3://${s3path}/${path.basename(dir)}/${file}`
+  const s3Path = `s3://${s3backet}/${path.basename(dir)}/${file}`
   const param = []
   param.push('s3')
   param.push('cp')
@@ -42,6 +55,7 @@ function createCommandParam(dir, file, s3path) {
   param.push(s3Path)
   return param
 }
+
 
 exports.upload = function (dir, param) {
   const LOG = `${dir}/upload.log`  
