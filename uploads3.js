@@ -4,9 +4,15 @@ const glob = require("glob");
 const { spawn, exec } = require('child_process')
 require('date-utils');
 
+function getMovieFiles(dir, absolute) {
+  const files = glob.sync(`*.[Mm][Pp]4`, {cwd:dir, absolute:absolute})
+  files.push(...glob.sync(`*.[Mm][Oo][Vv]`, {cwd:dir, absolute:absolute}))
+  return files
+}
+
 function createConcatFileList(dir) {
   const fileList = `${dir}/files.txt`
-  const files = glob.sync(`*.MP4`, {cwd:dir})
+  const files = getMovieFiles(dir, false)
   const stream = fs.createWriteStream(fileList)
   files.forEach(file => stream.write(`file ${file}\n`))
   stream.close()
@@ -16,7 +22,7 @@ function createConcatFileList(dir) {
 exports.getMovieDirs = function (targetDir) {
   const dirs = glob.sync( `*/`, {cwd:targetDir, absolute:true} )
   return dirs.filter(dir => {
-    const ptn1 = !fs.existsSync( `${dir}/files.txt` ) && 0 < glob.sync( `${dir}/*.[Mm][Pp]4` ).length
+    const ptn1 = !fs.existsSync( `${dir}/files.txt` ) && 0 < getMovieFiles(dir, false).length
     const ptn2 = fs.existsSync( `${dir}/refiles.txt` )
     return ptn1 || ptn2
   })
@@ -29,7 +35,7 @@ exports.getParameters = function (dir, s3backet) {
   if(fs.existsSync( refiles )) {
     fs.renameSync(refiles, fileList)
   } else {
-    const movies = glob.sync(`*.[Mm][Pp]4`, {cwd:dir})
+    const movies = getMovieFiles(dir, false)
     const stream = fs.createWriteStream(fileList)
     const files = movies.map(file => {
       stream.write(`file ${file}\n`)
