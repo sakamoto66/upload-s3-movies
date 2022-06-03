@@ -1,5 +1,5 @@
 {
-  "name": "vimeo_upload",
+  "name": "upload-s3-movies",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
