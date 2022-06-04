@@ -1,5 +1,6 @@
 #!/bin/bash
 
+ls ${1}
 uploads=`find ${1} -name upload`
 s3path=$2
 
